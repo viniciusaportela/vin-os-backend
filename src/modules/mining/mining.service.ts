@@ -1,7 +1,11 @@
 export class MiningService {
   mine(body: any) {}
 
-  getStatus() {}
+  getStatus() {
+    return {
+      status: "ok",
+    };
+  }
 }
 
 // const miners = new Map();

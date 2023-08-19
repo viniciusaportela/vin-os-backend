@@ -1,16 +1,18 @@
 import "reflect-metadata";
-import { WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import { Database } from "./database";
 import express from "express";
 import cors from "cors";
 import { MiningFactory } from "./modules/mining/mining.factory";
+import { IController, IHttpRouteMeta } from "./core/controller-decorators";
+import { httpWrapper, wssWrapper } from "./core/controller-wrappers";
 
 class Server {
   database: Database = null as unknown as Database;
   wss: WebSocketServer = null as unknown as WebSocketServer;
   app: express.Express = null as unknown as express.Express;
 
-  wssRoutes = new Map();
+  wssHandlers = new Map<string, { controller: IController; fn: Function }>();
 
   async spinUp() {
     this.database = new Database();
@@ -23,6 +25,7 @@ class Server {
     this.app.use(cors());
 
     this.setupRoutes();
+    this.setupWsHandler();
 
     this.app.listen(3000, () => {
       console.log("HTTP Server started at port 3000");
@@ -33,33 +36,50 @@ class Server {
 
   setupRoutes() {
     this.registerController(MiningFactory.createController());
+  }
 
-    // this.wss.on("connection", (ws) => {
-    //   ws.on("message", async (rawMessage) => {
-    //     const parsedMessage = JSON.parse(rawMessage.toString());
-    //     console.log(`Received message =>`, parsedMessage);
+  setupWsHandler() {
+    this.wss.on("connection", (ws) => {
+      ws.on("message", async (message) => {
+        await this.handleWsMessage(message.toString(), ws);
+      });
+    });
+  }
 
-    //     // await mcController(decodedMessage, ws);
-    //   });
-    // });
+  async handleWsMessage(message: any, ws: WebSocket) {
+    const decodedMessage = JSON.parse(message);
+    const command = decodedMessage.command;
+    const body = decodedMessage.body;
+    console.log(message, this.wssHandlers);
+
+    const handler = this.wssHandlers.get(command);
+
+    if (handler) {
+      await handler.fn.bind(handler.controller)(body, ws);
+    } else {
+      console.error("Command not found");
+    }
   }
 
   registerController(controller: any) {
-    // If has http routes add to express
-    // If has websocket routes add to wss
+    const httpRoutes = controller.httpRoutes;
+    httpRoutes.forEach((httpRoute: IHttpRouteMeta) => {
+      const method = httpRoute.method.toLowerCase();
+
+      this.app[method](
+        httpRoute.route,
+        httpWrapper(httpRoute.function, controller)
+      );
+    });
+
+    const websocketRoutes = controller.websocketRoutes;
+    websocketRoutes.forEach((websocketRoute: any) => {
+      this.wssHandlers.set(websocketRoute.command, {
+        controller,
+        fn: wssWrapper(websocketRoute.function, controller),
+      });
+    });
   }
 }
 
 new Server().spinUp();
-
-// async function mcController(message, ws) {
-//   if (message.command === "enter-mining") {
-//     enterMining(message, wss);
-//   } else if (message.command === "register-computer") {
-//     registerComputer(message, wss);
-//   } else if (message.command === "hello") {
-//     setTimeout(() => {
-//       ws.send("Hello from server");
-//     }, 1000);
-//   }
-// }

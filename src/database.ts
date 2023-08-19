@@ -7,8 +7,9 @@ export class Database {
   private __db: sqlite3.Database;
 
   constructor() {
-    this.__db = new sqlite.Database("./data/db.sqlite");
-    this.autoMigrate();
+    this.__db = new sqlite.Database("./data/db.sqlite", () => {
+      this.autoMigrate();
+    });
   }
 
   async autoMigrate() {
@@ -27,6 +28,9 @@ export class Database {
           "utf-8"
         );
         await this.write(migrationSql);
+        await this.write(
+          `INSERT INTO migrations (name) VALUES ('${migrationFileName}');`
+        );
       }
     }
 

@@ -1,12 +1,17 @@
-interface IHttpRouteMeta {
+export interface IHttpRouteMeta {
   method: "GET" | "POST";
   route: string;
   function: Function;
 }
 
-interface IWebsocketRouteMeta {
+export interface IWebsocketRouteMeta {
   command: string;
   function: Function;
+}
+
+export interface IController {
+  httpRoutes: IHttpRouteMeta[];
+  websocketRoutes: IWebsocketRouteMeta[];
 }
 
 export function Controller(path: string): ClassDecorator {
@@ -19,7 +24,9 @@ export function Controller(path: string): ClassDecorator {
       const httpRoutes: IHttpRouteMeta[] = [];
       const websocketRoutes: IWebsocketRouteMeta[] = [];
 
-      for (const methodName of Object.getOwnPropertyNames(instance)) {
+      for (const methodName of Object.getOwnPropertyNames(
+        instance.constructor.prototype
+      )) {
         if (methodName === "constructor") continue;
 
         const httpPath = Reflect.getMetadata(
@@ -30,28 +37,28 @@ export function Controller(path: string): ClassDecorator {
         if (httpPath) {
           httpRoutes.push({
             method: httpPath.method,
-            route: `${path}/${httpPath.route}`,
+            route: `/${path}/${httpPath.route}`,
             function: instance[methodName],
           });
         }
 
         const websocketRoute = Reflect.getMetadata(
-          "websocketRoute",
+          "wssRoute",
           originalPrototype,
           methodName
         );
         if (websocketRoute) {
           websocketRoutes.push({
-            command: websocketRoute,
+            command: `${path}::${websocketRoute}`,
             function: instance[methodName],
           });
         }
 
         instance.httpRoutes = httpRoutes;
         instance.websocketRoutes = websocketRoutes;
-
-        return instance;
       }
+
+      return instance;
     }
 
     newConstructor.prototype = originalPrototype;
@@ -85,7 +92,7 @@ export function Response() {
 }
 
 function registerParameter(
-  parameter: string,
+  _parameter: string,
   target: any,
   propertyKey: any,
   parameterIndex: number
