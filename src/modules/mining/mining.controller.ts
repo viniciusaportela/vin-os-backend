@@ -20,4 +20,6 @@ export class MiningController {
   getStatus() {
     return this.miningService.getStatus();
   }
+
+  // TODO Add Miner View (get all data relevant to miner)
 }

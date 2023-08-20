@@ -1,84 +1,125 @@
-export class MiningService {
-  mine(body: any) {}
+import { server } from "../../server";
+import { IMine } from "./mining.interface";
 
-  getStatus() {
+const MINING_COOLDOWN_MS = 30_000;
+const MININGS_PER_BLOCK = 3;
+const MINE_MAX_VALUE = 1_000_000;
+const GAIN_FACTOR = 1 / 10_000;
+
+export class MiningService {
+  async mine(body: IMine) {
+    const computerRes = await server.database.read(
+      "SELECT * FROM computers WHERE id = ?",
+      [body.computerId]
+    );
+
+    if (computerRes.length > 0) {
+      const computer = computerRes[0];
+
+      if (computer.type === "miner") {
+        const miningRes = await server.database.read(
+          "SELECT * FROM minings WHERE computerId = ? ORDER BY time DESC LIMIT 1",
+          [body.computerId]
+        );
+
+        if (miningRes.length > 0) {
+          if (
+            new Date().getTime() <
+            new Date(miningRes[0].time).getTime() + MINING_COOLDOWN_MS
+          ) {
+            throw Error("Computer is already mining");
+          }
+        }
+
+        const miningResult = await server.database.exec(
+          `INSERT INTO minings(computerId) VALUES(?) RETURNING blockIndex, time, computerId`,
+          [body.computerId]
+        );
+
+        const miningsMeta = await server.database.read(
+          `SELECT * FROM minings_meta LIMIT 1`
+        );
+        if (miningsMeta.length > 0) {
+          const lastBlockIndex =
+            miningsMeta[0].lastProcessedBlock * MININGS_PER_BLOCK;
+
+          const hasPassedThreshold =
+            miningResult.blockIndex >= lastBlockIndex + MININGS_PER_BLOCK;
+          if (hasPassedThreshold) {
+            await this.processBlock(miningsMeta, lastBlockIndex);
+          }
+        } else {
+          throw new Error("Minings Meta is not initialized");
+        }
+      } else {
+        throw Error("Can't mine in a non-miner computer");
+      }
+    } else {
+      throw Error("This computer was not registered");
+    }
+  }
+
+  private async processBlock(miningsMeta: any, lastBlockIndex: number) {
+    const randomIndex =
+      1 + lastBlockIndex + Math.floor(Math.random() * MININGS_PER_BLOCK);
+
+    const miningRes = await server.database.read(
+      `SELECT * FROM minings WHERE blockIndex = ?`,
+      [randomIndex]
+    );
+
+    if (miningRes[0]) {
+      const computer = await server.database.read(
+        `SELECT * FROM computers WHERE id = ?`,
+        [miningRes[0].computerId]
+      );
+
+      if (computer[0]) {
+        const gainedCoins =
+          GAIN_FACTOR * (await this.calculateRemainingCoins());
+
+        await server.database.write(
+          `INSERT INTO processed_blocks(winner, winnerIndex, gainedCoins, blockIndex) VALUES(?, ?, ?, ?)`,
+          [
+            computer[0].id,
+            randomIndex,
+            gainedCoins,
+            miningsMeta[0].lastProcessedBlock,
+          ]
+        );
+
+        await server.database.write(
+          `UPDATE players SET coins = coins + ? WHERE id = ?`,
+          [gainedCoins, computer[0].owner]
+        );
+
+        await server.database.write(
+          `UPDATE minings_meta SET lastProcessedBlock = ?, minedCoins = minedCoins + ?`,
+          [miningsMeta[0].lastProcessedBlock + 1, gainedCoins]
+        );
+      } else {
+        throw Error(`Computer ID ${miningRes[0].computerId} not found`);
+      }
+    } else {
+      throw Error(`Mining ID ${randomIndex} not found`);
+    }
+  }
+
+  private async calculateRemainingCoins() {
+    const miningsMeta = await server.database.read(
+      "SELECT * FROM minings_meta LIMIT 1"
+    );
+
+    if (miningsMeta.length > 0) {
+      return MINE_MAX_VALUE - miningsMeta[0].minedCoins;
+    } else {
+      throw Error("Minings Meta is not initialized");
+    }
+  }
+
+  async getStatus() {
     return {
       status: "ok",
     };
   }
 }
-
-// const miners = new Map();
-
-// const mining = new Array();
-
-// // TODO Increase when release
-// const MININGS_PER_BLOCK = 3;
-// const MINE_MAX_VALUE = 1_000_000;
-// const MINE_COOLDOWN_MS = 4_000;
-
-// // DEV Get this from DB
-// let mined = 0;
-
-// export function mine(message, wss) {
-//   if (miners.has(message.computerId)) {
-//     const miner = miners.get(message.computerId);
-
-//     if (new Date().getTime() - miner.lastTimestamp < MINE_COOLDOWN_MS) {
-//       console.warn("[Mining] Tried to mine before being able");
-//       return;
-//     }
-//   }
-
-//   miners.set(message.computerId, {
-//     lastTimestamp: new Date().getTime(),
-//   });
-
-//   mining.push(message.computerId);
-
-//   console.log("mine");
-//   console.log(miners);
-//   console.log(mining);
-
-//   if (mining.length >= MININGS_PER_BLOCK) {
-//     console.log("[Mining] Mining block was completed");
-
-//     const randomValue = Math.floor(Math.random() * MINE_MAX_VALUE);
-//     const winnerComputerId = mining[randomValue % MININGS_PER_BLOCK];
-
-//     console.log(`[Mining] Winner is computer ${winnerComputerId}`);
-
-//     for (const [userName, computers] of computersByPlayer.entries()) {
-//       const hasFound = Array.from(computers).some(
-//         (computerId) => computerId === winnerComputerId
-//       );
-
-//       if (hasFound) {
-//         const gainedCoins = calculateGainedCoins();
-
-//         coinsPerPlayer.set(
-//           userName,
-//           (coinsPerPlayer.get(userName) ?? 0) + gainedCoins
-//         );
-//         console.log("Send coins to", userName);
-
-//         mining.length = 0;
-//         miners.clear();
-//         mined += gainedCoins;
-
-//         console.log(coinsPerPlayer);
-//         break;
-//       }
-//     }
-
-//     mining.length = 0;
-//   }
-// }
-
-// function calculateGainedCoins() {
-//   return (1 / 10000) * calculateRemainingCoins();
-// }
-
-// function calculateRemainingCoins() {
-//   return MINE_MAX_VALUE - mined;
-// }

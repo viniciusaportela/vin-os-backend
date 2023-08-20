@@ -84,4 +84,15 @@ export class Database {
       statement.finalize();
     });
   }
+
+  async exec(sql: string, parameters: any[] = []): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.__db.get(sql, parameters, (err, result) => {
+        console.log(result, err);
+        if (err) reject(err);
+
+        resolve(result);
+      });
+    });
+  }
 }

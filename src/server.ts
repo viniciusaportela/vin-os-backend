@@ -6,6 +6,8 @@ import cors from "cors";
 import { MiningFactory } from "./modules/mining/mining.factory";
 import { IController, IHttpRouteMeta } from "./core/controller-decorators";
 import { httpWrapper, wssWrapper } from "./core/controller-wrappers";
+import { ComputersFactory } from "./modules/computers/computers.factory";
+import { PlayersFactory } from "./modules/players/players.factory";
 
 class Server {
   database: Database = null as unknown as Database;
@@ -16,9 +18,14 @@ class Server {
 
   async spinUp() {
     this.database = new Database();
-    this.wss = new WebSocketServer({
-      port: 8080,
-    });
+    this.wss = new WebSocketServer(
+      {
+        port: 8080,
+      },
+      () => {
+        console.log("WSS Server started at port 8080");
+      }
+    );
     this.app = express();
 
     this.app.use(express.json());
@@ -32,10 +39,14 @@ class Server {
     });
 
     console.log("Server Started");
+
+    return this;
   }
 
   setupRoutes() {
     this.registerController(MiningFactory.createController());
+    this.registerController(ComputersFactory.createController());
+    this.registerController(PlayersFactory.createController());
   }
 
   setupWsHandler() {
@@ -50,7 +61,6 @@ class Server {
     const decodedMessage = JSON.parse(message);
     const command = decodedMessage.command;
     const body = decodedMessage.body;
-    console.log(message, this.wssHandlers);
 
     const handler = this.wssHandlers.get(command);
 
@@ -82,4 +92,5 @@ class Server {
   }
 }
 
-new Server().spinUp();
+export const server = new Server();
+server.spinUp();

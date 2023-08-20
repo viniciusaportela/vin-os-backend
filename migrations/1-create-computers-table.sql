@@ -3,6 +3,6 @@ CREATE TABLE IF NOT EXISTS computers (
   owner INTEGER NOT NULL,
   type VARCHAR(255),
   status VARCHAR(255) NOT NULL DEFAULT 'active',
-  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  createdAt TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
   FOREIGN KEY (owner) REFERENCES players(id)
 );
