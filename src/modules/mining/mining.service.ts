@@ -1,10 +1,10 @@
 import { server } from "../../server";
 import { IMine } from "./mining.interface";
 
-const MINING_COOLDOWN_MS = 30_000;
-const MININGS_PER_BLOCK = 3;
+const MINING_COOLDOWN_MS = 60_000;
+const MININGS_PER_BLOCK = 100;
 const MINE_MAX_VALUE = 1_000_000;
-const GAIN_FACTOR = 1 / 10_000;
+const GAIN_FACTOR = 2.32 / 1_000_000;
 
 export class MiningService {
   async mine(body: IMine) {
@@ -115,11 +115,5 @@ export class MiningService {
     } else {
       throw Error("Minings Meta is not initialized");
     }
-  }
-
-  async getStatus() {
-    return {
-      status: "ok",
-    };
   }
 }
