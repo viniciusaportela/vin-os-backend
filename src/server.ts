@@ -29,6 +29,8 @@ class Server {
     );
     this.app = express();
 
+    this.app.use(express.static("public"));
+
     this.app.use(express.json());
     this.app.use(cors());
 

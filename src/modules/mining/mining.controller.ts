@@ -1,5 +1,11 @@
-import { Body, Controller, WssRoute } from "../../core/controller-decorators";
-import { IMine } from "./mining.interface";
+import {
+  Body,
+  Controller,
+  HttpRoute,
+  Query,
+  WssRoute,
+} from "../../core/controller-decorators";
+import { IListProcessedBlocksWithPlayer, IMine } from "./mining.interface";
 import { MiningService } from "./mining.service";
 
 @Controller("mining")
@@ -9,5 +15,10 @@ export class MiningController {
   @WssRoute("mine")
   mine(@Body() body: IMine) {
     return this.miningService.mine(body);
+  }
+
+  @HttpRoute("GET", "listProcessedBlocksWithPlayer")
+  listProcessedBlocksWithPlayer(@Query() body: IListProcessedBlocksWithPlayer) {
+    return this.miningService.listProcessedBlocksWithPlayer(body);
   }
 }

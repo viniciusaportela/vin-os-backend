@@ -1,5 +1,5 @@
 import { server } from "../../server";
-import { IMine } from "./mining.interface";
+import { IListProcessedBlocksWithPlayer, IMine } from "./mining.interface";
 
 const MINING_COOLDOWN_MS = 60_000;
 const MININGS_PER_BLOCK = 100;
@@ -103,6 +103,15 @@ export class MiningService {
     } else {
       throw Error(`Mining ID ${randomIndex} not found`);
     }
+  }
+
+  async listProcessedBlocksWithPlayer(body: IListProcessedBlocksWithPlayer) {
+    const blocks = await server.database.read(
+      `SELECT * FROM processed_blocks WHERE winner = ?`,
+      [body.playerId]
+    );
+
+    return blocks;
   }
 
   private async calculateRemainingCoins() {
