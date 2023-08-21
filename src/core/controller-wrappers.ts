@@ -69,5 +69,7 @@ function processParamByType(type: string, meta: IRequestMeta) {
       return meta.response;
     case "ws":
       return meta.ws;
+    case "query":
+      return meta.request?.query;
   }
 }

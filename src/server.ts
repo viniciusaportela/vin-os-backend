@@ -8,6 +8,7 @@ import { IController, IHttpRouteMeta } from "./core/controller-decorators";
 import { httpWrapper, wssWrapper } from "./core/controller-wrappers";
 import { ComputersFactory } from "./modules/computers/computers.factory";
 import { PlayersFactory } from "./modules/players/players.factory";
+import { TransfersFactory } from "./modules/transfers/transfers.factory";
 
 class Server {
   database: Database = null as unknown as Database;
@@ -47,6 +48,7 @@ class Server {
     this.registerController(MiningFactory.createController());
     this.registerController(ComputersFactory.createController());
     this.registerController(PlayersFactory.createController());
+    this.registerController(TransfersFactory.createController());
   }
 
   setupWsHandler() {

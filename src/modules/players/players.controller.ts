@@ -1,5 +1,16 @@
-import { Body, Controller, WssRoute } from "../../core/controller-decorators";
-import { IGiveCoins, IRegister } from "./players.interface";
+import {
+  Body,
+  Controller,
+  HttpRoute,
+  Query,
+  WssRoute,
+} from "../../core/controller-decorators";
+import {
+  IGetPlayer,
+  IGiveCoins,
+  IRegister,
+  ITransferCoins,
+} from "./players.interface";
 import { PlayersService } from "./players.service";
 
 @Controller("players")
@@ -14,5 +25,15 @@ export class PlayersController {
   @WssRoute("giveCoins")
   giveCoins(@Body() body: IGiveCoins) {
     return this.playersService.giveCoins(body);
+  }
+
+  @HttpRoute("GET", "get")
+  getPlayer(@Query() body: IGetPlayer) {
+    return this.playersService.getPlayer(body);
+  }
+
+  @HttpRoute("POST", "transferCoins")
+  transferCoins(@Body() body: ITransferCoins) {
+    return this.playersService.transferCoins(body);
   }
 }

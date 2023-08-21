@@ -85,6 +85,12 @@ export function Body() {
   };
 }
 
+export function Query() {
+  return function (target: any, propertyKey: any, parameterIndex: number) {
+    registerParameter("query", target, propertyKey, parameterIndex);
+  };
+}
+
 export function Response() {
   return function (target: any, propertyKey: any, parameterIndex: number) {
     registerParameter("response", target, propertyKey, parameterIndex);
@@ -92,7 +98,7 @@ export function Response() {
 }
 
 function registerParameter(
-  _parameter: string,
+  parameter: string,
   target: any,
   propertyKey: any,
   parameterIndex: number
@@ -100,7 +106,7 @@ function registerParameter(
   const parameters =
     Reflect.getMetadata("parameters", target, propertyKey) ?? [];
 
-  parameters[parameterIndex] = "body";
+  parameters[parameterIndex] = parameter;
 
   Reflect.defineMetadata("parameters", parameters, target, propertyKey);
 }
