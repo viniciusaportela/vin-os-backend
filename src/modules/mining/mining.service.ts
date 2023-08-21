@@ -107,7 +107,7 @@ export class MiningService {
 
   async listProcessedBlocksWithPlayer(body: IListProcessedBlocksWithPlayer) {
     const blocks = await server.database.read(
-      `SELECT * FROM processed_blocks WHERE winner = ?`,
+      `SELECT * FROM processed_blocks INNER JOIN computers ON computers.id = processed_blocks.winner WHERE computers.owner = ?`,
       [body.playerId]
     );
 
