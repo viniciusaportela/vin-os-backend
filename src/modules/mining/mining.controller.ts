@@ -21,4 +21,9 @@ export class MiningController {
   listProcessedBlocksWithPlayer(@Query() body: IListProcessedBlocksWithPlayer) {
     return this.miningService.listProcessedBlocksWithPlayer(body);
   }
+
+  @HttpRoute("GET", "listProcessedBlocks")
+  listProcessedBlocks() {
+    return this.miningService.listProcessedBlocks();
+  }
 }

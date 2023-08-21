@@ -114,6 +114,12 @@ export class MiningService {
     return blocks;
   }
 
+  async listProcessedBlocks() {
+    const blocks = await server.database.read(`SELECT * FROM processed_blocks`);
+
+    return blocks;
+  }
+
   private async calculateRemainingCoins() {
     const miningsMeta = await server.database.read(
       "SELECT * FROM minings_meta LIMIT 1"
