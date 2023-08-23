@@ -47,6 +47,12 @@ export class PlayersService {
     }
   }
 
+  async listPlayers() {
+    const players = await server.database.read(`SELECT * FROM players`);
+
+    return players ?? [];
+  }
+
   async transferCoins(body: ITransferCoins) {
     const fromPlayer = await server.database.read(
       `SELECT * FROM players WHERE name = ?`,

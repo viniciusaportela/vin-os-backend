@@ -32,6 +32,11 @@ export class PlayersController {
     return this.playersService.getPlayer(body);
   }
 
+  @HttpRoute("GET", "list")
+  listPlayers() {
+    return this.playersService.listPlayers();
+  }
+
   @HttpRoute("POST", "transferCoins")
   transferCoins(@Body() body: ITransferCoins) {
     return this.playersService.transferCoins(body);
