@@ -1,5 +1,5 @@
 import { server } from "../../server";
-import { IRegister } from "./computers.interface";
+import { IListFromPlayer, IRegister } from "./computers.interface";
 
 export class ComputersService {
   async register(body: IRegister) {
@@ -18,5 +18,14 @@ export class ComputersService {
     } else {
       throw new Error("Player does not exists, register it first");
     }
+  }
+
+  async listComputersFromPlayer(body: IListFromPlayer) {
+    const computers = await server.database.read(
+      `SELECT * FROM computers WHERE owner = ?`,
+      [body.playerId]
+    );
+
+    return computers;
   }
 }

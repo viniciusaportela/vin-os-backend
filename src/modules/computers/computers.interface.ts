@@ -3,3 +3,7 @@ export interface IRegister {
   computerId: string;
   type?: string;
 }
+
+export interface IListFromPlayer {
+  playerId: number;
+}

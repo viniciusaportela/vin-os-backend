@@ -1,5 +1,9 @@
 import { server } from "../../server";
-import { IListProcessedBlocksWithPlayer, IMine } from "./mining.interface";
+import {
+  IListProcessedBlocksWithPlayer,
+  IMine,
+  IStats,
+} from "./mining.interface";
 
 const MINING_COOLDOWN_MS = 60_000;
 const MININGS_PER_BLOCK = 100;
@@ -120,6 +124,41 @@ export class MiningService {
     );
 
     return blocks;
+  }
+
+  async stats(body: IStats) {
+    const myProcessedBlock = await server.database.read(
+      `SELECT SUM(gainedCoins) AS sum, COUNT(*) AS count FROM processed_blocks INNER JOIN computers ON computers.id = processed_blocks.winner WHERE computers.owner = ?`,
+      [body.playerId]
+    );
+
+    const minedCoins = myProcessedBlock?.[0]?.sum ?? 0;
+
+    const processedBlocks = await server.database.read(`
+      SELECT COUNT(*) AS count FROM processed_blocks
+    `);
+
+    const processedBlocksCount = processedBlocks?.[0]?.count ?? 0;
+
+    const miningsMetaRes = await server.database.read(
+      `SELECT * FROM minings_meta LIMIT 1`
+    );
+    const lastProcessedBlock = miningsMetaRes[0]?.lastProcessedBlock ?? 0;
+
+    const currentBlockMinings = await server.database.read(
+      `SELECT * FROM minings WHERE blockIndex > ? LIMIT ?`,
+      [lastProcessedBlock * MININGS_PER_BLOCK, MININGS_PER_BLOCK]
+    );
+
+    const successRate =
+      (myProcessedBlock[0]?.count ?? 0) / processedBlocksCount;
+
+    return {
+      minedCoins,
+      successRate,
+      currentBlockMinings,
+      miningsPerBlock: MININGS_PER_BLOCK,
+    };
   }
 
   private async calculateRemainingCoins() {

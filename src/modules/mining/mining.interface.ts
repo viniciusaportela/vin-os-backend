@@ -5,3 +5,7 @@ export interface IMine {
 export interface IListProcessedBlocksWithPlayer {
   playerId: number;
 }
+
+export interface IStats {
+  playerId: number;
+}

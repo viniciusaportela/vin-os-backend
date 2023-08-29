@@ -5,7 +5,11 @@ import {
   Query,
   WssRoute,
 } from "../../core/controller-decorators";
-import { IListProcessedBlocksWithPlayer, IMine } from "./mining.interface";
+import {
+  IListProcessedBlocksWithPlayer,
+  IMine,
+  IStats,
+} from "./mining.interface";
 import { MiningService } from "./mining.service";
 
 @Controller("mining")
@@ -25,5 +29,10 @@ export class MiningController {
   @HttpRoute("GET", "listProcessedBlocks")
   listProcessedBlocks() {
     return this.miningService.listProcessedBlocks();
+  }
+
+  @HttpRoute("GET", "stats")
+  stats(@Query() body: IStats) {
+    return this.miningService.stats(body);
   }
 }
