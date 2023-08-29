@@ -4,7 +4,7 @@ import { IListProcessedBlocksWithPlayer, IMine } from "./mining.interface";
 const MINING_COOLDOWN_MS = 60_000;
 const MININGS_PER_BLOCK = 100;
 const MINE_MAX_VALUE = 1_000_000;
-const GAIN_FACTOR = 2.32 / 1_000_000;
+const GAIN_FACTOR = 1.32 / 1_000_000;
 
 export class MiningService {
   async mine(body: IMine) {
@@ -107,7 +107,7 @@ export class MiningService {
 
   async listProcessedBlocksWithPlayer(body: IListProcessedBlocksWithPlayer) {
     const blocks = await server.database.read(
-      `SELECT * FROM processed_blocks INNER JOIN computers ON computers.id = processed_blocks.winner WHERE computers.owner = ?`,
+      `SELECT processed_blocks.*, computers.owner, players.name FROM processed_blocks INNER JOIN computers ON computers.id = processed_blocks.winner INNER JOIN players ON computers.owner = players.id WHERE computers.owner = ?`,
       [body.playerId]
     );
 
@@ -115,7 +115,9 @@ export class MiningService {
   }
 
   async listProcessedBlocks() {
-    const blocks = await server.database.read(`SELECT * FROM processed_blocks`);
+    const blocks = await server.database.read(
+      `SELECT * FROM processed_blocks `
+    );
 
     return blocks;
   }
